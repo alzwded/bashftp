@@ -28,7 +28,7 @@ z
 EOT
 
 for i in a b d/c d/e d ; do
-    touch -m -t 200101010101.00 "$TESTDIR/$i"
+    touch -m -d 2001-01-01T01:01:00Z "$TESTDIR/$i"
 done
 
 CURRENT=none
@@ -59,9 +59,9 @@ pushd "$TESTDIR" > /dev/null 2>&1
 start ls TESTDIR, no md5
 $bashftp ls . | sort > "$WORKDIR/ls.1" || fail
 cat <<EOT > "$WORKDIR/ls.1.orig"
-d 978303660 ./d
-f 978303660 12 0 ./b
-f 978303660 5 0 ./a
+d 978310860 ./d
+f 978310860 12 0 ./b
+f 978310860 5 0 ./a
 EOT
 diff -u "$WORKDIR/ls.1.orig" "$WORKDIR/ls.1" || fail
 
@@ -69,8 +69,8 @@ diff -u "$WORKDIR/ls.1.orig" "$WORKDIR/ls.1" || fail
 start ls TESTDIR/d, with md5
 $bashftp ls ./d md5 | sort > "$WORKDIR/ls.2" || fail
 cat <<EOT > "$WORKDIR/ls.2.orig"
-d 978303660 ./d/e
-f 978303660 12 18e724602c9dcb3e4e936f8909a4972c ./d/c
+d 978310860 ./d/e
+f 978310860 12 18e724602c9dcb3e4e936f8909a4972c ./d/c
 EOT
 diff -u "$WORKDIR/ls.2.orig" "$WORKDIR/ls.2" || fail
 
