@@ -105,7 +105,32 @@ bashftp_put() {
 }
 
 bashftp_get() {
-    echo a
+    local START=${1?missing start offset}
+    local END=${2?missing end offset}
+    local IN_path="${3?missing path}"
+
+    if [[ ! -f "$IN_path" ]] ; then
+        echo "Not a file: $IN_path" 1>&2
+        exit 1
+    fi
+
+    # crazy computations
+    local l_count=$( expr $END - $START )
+    if [[ $l_count -le 0 ]] ; then
+        echo "$END <= $START" 1>&2
+        exit 1
+    fi
+
+    local l_div=$( expr $START '/' $l_count )
+    local l_remul=$( expr $l_div '*' $l_count )
+
+    if [[ $l_remul -eq $START ]] ; then
+        # we can use blocks
+        dd "if=$IN_path" bs=$l_count count=1 seek=$l_div
+    else
+        # we cannot use blocks
+        dd "if=$IN_path" bs=1 count=$l_count seek=$START
+    fi
 }
 
 bashftp_help() {
