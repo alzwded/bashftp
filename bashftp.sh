@@ -69,7 +69,7 @@ bashftp_ls() {
                 if which $2 > /dev/null 2>&1 ; then
                     l_hash=$2
                 elif which $2sum > /dev/null 2>&1 ; then
-                    l_hash=$2
+                    l_hash=$2sum
                 fi
                 ;;
             *)
