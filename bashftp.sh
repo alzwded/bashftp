@@ -75,7 +75,33 @@ bashftp_ls() {
 }
 
 bashftp_put() {
-    echo a
+    local START=${1?missing start offset}
+    local END=${2?missing end offset}
+    local IN_path="${3?missing path}"
+
+    # crazy computations
+    local l_count=$( expr $END - $START )
+    if [[ $l_count -le 0 ]] ; then
+        echo "$END <= $START" 1>&2
+        exit 1
+    fi
+
+    local l_div=$( expr $START '/' $l_count )
+    local l_remul=$( expr $l_div '*' $l_count )
+
+    # truncate file
+    truncate -s $END "$IN_path"
+
+    if [[ $l_remul -eq $START ]] ; then
+        # we can use blocks
+        dd if=/dev/stdin "of=$IN_path" bs=$l_count count=1 seek=$l_div
+    else
+        # we cannot use blocks
+        dd if=/dev/stdin "of=$IN_path" bs=1 count=$l_count seek=$START
+    fi
+
+    # drain stdin
+    cat > /dev/null
 }
 
 bashftp_get() {
