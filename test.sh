@@ -51,7 +51,7 @@ fail() {
     fi
 }
 
-bashftp="$( dirname $( readlink -f "$0" ) )/bashftp.sh"
+bashftp="$( dirname $( realpath "$0" ) )/bashftp.sh"
 
 pushd "$TESTDIR" > /dev/null 2>&1
 

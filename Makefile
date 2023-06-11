@@ -1,6 +1,11 @@
 PREFIX ?= /usr/local
 
-check:
+check: check_environment tests
+
+check_environment:
+	./check_env.sh
+
+tests:
 	./test.sh
 
 install:
