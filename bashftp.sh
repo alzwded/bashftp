@@ -29,7 +29,7 @@ error_out() {
 }
 
 bashftp_hash() {
-    printf "%s\n" $( cksum -a ${1?missing hash command} "${2?missing path}" | cut -d= -f2 ) || error_out "Failed to hash $1"
+    ${1?missing hash command} -q "${2?missing path}" || error_out "Failed to md5 $1"
 }
 
 bashftp_time() {
@@ -66,7 +66,11 @@ bashftp_ls() {
         case "$2" in
             md5|sha1|sha256|sha512)
                 l_with_hash=1
-                l_hash=$2
+                if which $2 > /dev/null 2>&1 ; then
+                    l_hash=$2
+                elif which $2sum > /dev/null 2>&1 ; then
+                    l_hash=$2
+                fi
                 ;;
             *)
                 error_out "Unsupported hash $2"
