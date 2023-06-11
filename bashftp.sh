@@ -29,7 +29,7 @@ error_out() {
 }
 
 bashftp_hash() {
-    ${1?missing hash command} -q "${2?missing path}" || error_out "Failed to md5 $1"
+    printf "%s\n" $( cksum -a ${1?missing hash command} "${2?missing path}" | cut -d= -f2 ) || error_out "Failed to hash $1"
 }
 
 bashftp_time() {
