@@ -126,10 +126,10 @@ bashftp_get() {
 
     if [[ $l_remul -eq $START ]] ; then
         # we can use blocks
-        dd "if=$IN_path" bs=$l_count count=1 seek=$l_div
+        dd "if=$IN_path" bs=$l_count count=1 skip=$l_div
     else
         # we cannot use blocks
-        dd "if=$IN_path" bs=1 count=$l_count seek=$START
+        dd "if=$IN_path" bs=1 count=$l_count skip=$START
     fi
 }
 
