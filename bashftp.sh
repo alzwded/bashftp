@@ -29,7 +29,7 @@ error_out() {
 }
 
 bashftp_hash() {
-    ${1?missing hash command} -q "${2?missing path}" || error_out "Failed to md5 $1"
+    ${1?missing hash command} "${2?missing path}" || error_out "Failed to md5 $1"
 }
 
 bashftp_time() {
@@ -67,9 +67,9 @@ bashftp_ls() {
             md5|sha1|sha256|sha512)
                 l_with_hash=1
                 if which $2 > /dev/null 2>&1 ; then
-                    l_hash=$2
+                    l_hash=($2 -q)
                 elif which $2sum > /dev/null 2>&1 ; then
-                    l_hash=$2sum
+                    l_hash=($2sum)
                 fi
                 ;;
             *)
@@ -105,7 +105,7 @@ bashftp_ls() {
             printf "f %d %d %s %s\n" \
                 $( bashftp_time_size "$full_path" ) \
                 \
-                "$( ( [ $l_with_hash -eq 1 ] ) && ( bashftp_hash $l_hash "$full_path" ) || echo 0 )" \
+                "$( ( [ $l_with_hash -eq 1 ] ) && ( bashftp_hash "${l_hash[*]}" "$full_path" ) || echo 0 )" \
                 "$full_path"
         fi
     done
