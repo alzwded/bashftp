@@ -132,19 +132,10 @@ bashftp_put() {
         exit 1
     fi
 
-    local l_div=$( expr $START '/' $l_count )
-    local l_remul=$( expr $l_div '*' $l_count )
-
     # truncate file
     #truncate -s $START "$IN_path" || error_out "Failed to truncate $IN_path to $START"
 
-    if [[ $l_remul -eq $START ]] ; then
-        # we can use blocks
-        dd if=/dev/stdin "of=$IN_path" bs=$l_count count=1 seek=$l_div || error_out "Failed to dd stdin to $IN_path bs=$l_count"
-    else
-        # we cannot use blocks
-        dd if=/dev/stdin "of=$IN_path" bs=1 count=$l_count seek=$START || error_out "Failed to dd stdin to $IN_path bs=1"
-    fi
+    dd if=/dev/stdin "of=$IN_path" bs=1 count=$l_count seek=$START || error_out "Failed to dd stdin to $IN_path bs=1"
 
     # drain stdin
     cat > /dev/null
@@ -169,16 +160,7 @@ bashftp_get() {
         exit 1
     fi
 
-    local l_div=$( expr $START '/' $l_count )
-    local l_remul=$( expr $l_div '*' $l_count )
-
-    if [[ $l_remul -eq $START ]] ; then
-        # we can use blocks
-        dd "if=$IN_path" bs=$l_count count=1 skip=$l_div || error_out "Failed to dd $IN_path to stdout bs=$l_count"
-    else
-        # we cannot use blocks
-        dd "if=$IN_path" bs=1 count=$l_count skip=$START || error_out "Failed to dd $IN_path to stdout bs=1"
-    fi
+    dd "if=$IN_path" bs=1 count=$l_count skip=$START || error_out "Failed to dd $IN_path to stdout bs=1"
 
     exit 0
 }
