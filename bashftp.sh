@@ -29,7 +29,7 @@ error_out() {
 }
 
 bashftp_hash() {
-    md5 -q "${1?missing path}" || error_out "Failed to md5 $1"
+    ${1?missing hash command} -q "${2?missing path}" || error_out "Failed to md5 $1"
 }
 
 bashftp_time() {
@@ -59,16 +59,20 @@ bashftp_ls() {
     local l_hash
     local l_size
     local l_timestamp
-    local l_with_md5=0
+    local l_with_hash=0
+    local l_hash
 
-    if [[ ${2+x} == x && "$2" == md5 ]] ; then
-        l_with_md5=1
+    if [[ ${2+x} == x  ]] ; then
+        case "$2" in
+            md5|sha1|sha256|sha512)
+                l_with_hash=1
+                l_hash=$2
+                ;;
+            *)
+                error_out "Unsupported hash $2"
+                ;;
+        esac
     fi
-    #if [[ ${IN_path:0:1} != '/' ]] ; then
-    #    echo "Path is not absolute: $IN_path" 1>&2
-    #    exit 1
-    #fi
-    #IN_path=/"${IN_path#/}"
     IN_path="${IN_path%/}"
 
     if [[ ! -d "${IN_path}" ]] ; then
@@ -97,7 +101,7 @@ bashftp_ls() {
             printf "f %d %d %s %s\n" \
                 $( bashftp_time_size "$full_path" ) \
                 \
-                "$( ( [ $l_with_md5 -eq 1 ] ) && ( bashftp_hash "$full_path" ) || echo 0 )" \
+                "$( ( [ $l_with_hash -eq 1 ] ) && ( bashftp_hash $l_hash "$full_path" ) || echo 0 )" \
                 "$full_path"
         fi
     done
@@ -112,7 +116,8 @@ bashftp_put() {
 
     # check for empty file uploads
     if [[ $START -eq 0 && $START -eq $END ]] ; then
-        truncate -s 0 "$IN_path" || error_out "Faield to truncate $IN_path to 0"
+        #truncate -s 0 "$IN_path" || error_out "Faield to truncate $IN_path to 0"
+        cat /dev/null > "$IN_path"
         exit 0
     fi
 
@@ -127,7 +132,7 @@ bashftp_put() {
     local l_remul=$( expr $l_div '*' $l_count )
 
     # truncate file
-    truncate -s $END "$IN_path" || error_out "Failed to truncate $IN_path to $END"
+    #truncate -s $START "$IN_path" || error_out "Failed to truncate $IN_path to $START"
 
     if [[ $l_remul -eq $START ]] ; then
         # we can use blocks
