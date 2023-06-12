@@ -28,27 +28,46 @@ error_out() {
     exit 1
 }
 
-bashftp_hash() {
-    printf "%s\n" $( ${1?missing hash command} "${2?missing path}" | cut -d= -f2 ) || error_out "Failed to md5 $1"
-}
+if uname -a | grep ^OpenBSD > /dev/null 2>&1 ; then
+    bashftp_hash() {
+        printf "%s\n" $( ${1?missing hash command} -q "${2?missing path}" | cut -d= -f2 ) || error_out "Failed to md5 $1"
+    }
+elif md5sum -b "$0" > /dev/null 2>&1 ; then
+    bashftp_hash() {
+        printf "%s\n" $( ${1?missing hash command} -b "${2?missing path}" | cut -d' ' -f1 ) || error_out "Failed to md5 $1"
+    }
+else
+    bashftp_hash() {
+        printf "%s\n" $( ${1?missing hash command} -b "${2?missing path}" | cut -d' ' -f1 ) || error_out "Failed to md5 $1"
+    }
+fi
 
-bashftp_time() {
-    uname -a | grep ^OpenBSD > /dev/null 2>&1
-    if [ $? -eq 0 ] ; then
+if uname -a | grep ^OpenBSD > /dev/null 2>&1 ; then
+    bashftp_time() {
         stat -f %Sm -t %s "${1?missing path}" || error_out "Failed to stat $1"
-    else
-        stat --format="%Y" "${1?missing path}" || error_out "Failed to stat $1"
-    fi
-}
-
-bashftp_time_size() {
-    uname -a | grep ^OpenBSD > /dev/null 2>&1
-    if [ $? -eq 0 ] ; then
+    }
+    
+    bashftp_time_size() {
         stat -f "%Sm %z" -t %s "${1?missing path}" || error_out "Failed to stat $1"
-    else
+    }
+elif stat --format=%Y "$0" > /dev/null 2>&1 ; then
+    bashftp_time() {
+        stat --format="%Y" "${1?missing path}" || error_out "Failed to stat $1"
+    }
+    
+    bashftp_time_size() {
         stat --format="%Y %s" "${1?missing path}" || error_out "Failed to stat $1"
-    fi
-}
+    }
+else
+    bashftp_time() {
+        stat -c "%Y" "${1?missing path}" || error_out "Failed to stat $1"
+    }
+    
+    bashftp_time_size() {
+        stat -c "%Y %s" "${1?missing path}" || error_out "Failed to stat $1"
+    }
+fi
+
 
 bashftp_ls() {
     local IN_path="${1?missing path}"
@@ -69,7 +88,7 @@ bashftp_ls() {
                 if which $2 > /dev/null 2>&1 ; then
                     l_hash=( $2 )
                 elif which $2sum > /dev/null 2>&1 ; then
-                    l_hash=($2sum --tag -b)
+                    l_hash=( $2sum )
                 fi
                 ;;
             *)

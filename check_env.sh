@@ -15,7 +15,7 @@ which stat
 which md5 || which sha1 || which sha512 || which sha256 || which md5sum || which sha1sum || which sha512sum || which sha256sum || echo 'Warn: no known hasing algorithms'
 which printf
 
-stat -f '%Sm %z' -t %s "$0" || stat --format="%Y %s" "$0"
+stat -f '%Sm %z' -t %s "$0" || stat --format="%Y %s" "$0" || stat -c "%Y %s" $0
 uname -a
 
 [ -c /dev/null ]

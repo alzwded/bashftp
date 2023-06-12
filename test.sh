@@ -28,7 +28,7 @@ z
 EOT
 
 for i in a b d/c d/e d ; do
-    touch -m -d 2001-01-01T01:01:00Z "$TESTDIR/$i"
+    touch -m -d 2001-01-01T01:01:00Z "$TESTDIR/$i" || touch -m -d @978310860 "$TESTDIR/$i"
 done
 
 CURRENT=none
