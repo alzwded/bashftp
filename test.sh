@@ -181,6 +181,12 @@ cat /dev/null | $bashftp put 0 0 zero || fail
 printf "" > "$WORKDIR/empty"
 diff -u "$WORKDIR/empty" zero || fail
 
+# put empty file in nonexistant directory
+start put file in nonexistant1 directory
+cat /dev/null | $bashftp put 0 0 nonexistant1/emptyfile || fail
+printf "" > "$WORKDIR/empty"
+diff -u "$WORKDIR/empty" nonexistant1/emptyfile || fail
+
 # error cases
 #
 
@@ -190,9 +196,10 @@ $bashftp ls nonexistant && fail
 start get nonexistant path
 $bashftp get 0 5 nonexistant && fail
 
-start put into nonexistant dir
-cat <<EOT | $bashftp put 0 5 nonexistant/file && fail
-EOT
+# superseeded by put empty file in nonexistant directory
+#start put into nonexistant dir
+#cat <<EOT | $bashftp put 0 5 nonexistant/file && fail
+#EOT
 
 start get with bad range
 cat /dev/zero | $bashftp put 5 0 no && fail

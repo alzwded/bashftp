@@ -49,3 +49,11 @@ Example ls output:
       d 1666266539 subdir
       f 1666266539 2279 2164e12fc5f03902b61d977fc2f29d00 file
 ```
+
+Changelog
+=========
+
+1.0 -> 2.0
+----------
+
+`put` -ing files into nonexistant paths will create all intermediate paths (`mkdir -p`).

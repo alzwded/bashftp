@@ -21,7 +21,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-VERSION=1.0
+VERSION=2.0
 
 error_out() {
     echo "$@" 1>&2
@@ -136,6 +136,9 @@ bashftp_put() {
     local START=${1?missing start offset}
     local END=${2?missing end offset}
     local IN_path="${3?missing path}"
+
+    # ensure all directory paths exist
+    mkdir -p "$( dirname "$IN_path" )"
 
     # check for empty file uploads
     if [[ $START -eq 0 && $START -eq $END ]] ; then
