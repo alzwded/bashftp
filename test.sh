@@ -92,7 +92,7 @@ diff -u "$WORKDIR/get.0.orig" "$WORKDIR/get.0" || fail
 
 # get a block
 start get second block, block is smaller than file
-$bashftp get 5 10 ./b > "$WORKDIR/get.2" || fail
+bash -x $bashftp get 5 10 ./b > "$WORKDIR/get.2" || fail
 cat <<EOT > "$WORKDIR/get.2.orig"
 qwer
 EOT

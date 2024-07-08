@@ -53,6 +53,13 @@ Example ls output:
 Changelog
 =========
 
+2.0 -> 3.0
+----------
+
+- Speed up `dd` by using bigger block sizes
+- First put block overwrites the file, but subsequent puts don't.
+  I need to rewrite this in C and get rid of `dd`'s 40 (or 50?) years of astonishing behaviour.
+
 1.0 -> 2.0
 ----------
 

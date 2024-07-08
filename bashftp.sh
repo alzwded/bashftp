@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2023, Vlad Meșco
+# Copyright (c) 2023-2024, Vlad Meșco
 # 
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 # 
@@ -21,7 +21,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-VERSION=2.0
+BASHFTP_VERSION=3.0
 
 error_out() {
     echo "$@" 1>&2
@@ -142,25 +142,67 @@ bashftp_put() {
 
     # check for empty file uploads
     if [[ $START -eq 0 && $START -eq $END ]] ; then
-        #truncate -s 0 "$IN_path" || error_out "Faield to truncate $IN_path to 0"
         cat /dev/null > "$IN_path"
         exit 0
     fi
 
+    # if this is the first block, blank out the file
+    # TODO learn to truncate the file without `truncate'
+    if [[ $START -eq 0 ]] ; then
+        cat /dev/null > "$IN_path"
+    fi
+
+    #-------------------
     # crazy computations
+    #-------------------
+
+    # determine how many bytes we're moving
     local l_count=$( expr $END - $START )
     if [[ $l_count -le 0 ]] ; then
         echo "Incorrect range: $END <= $START" 1>&2
         exit 1
     fi
+    # if we're moving an integer amount of blocks, use that
+    # as the output block size
+    if [[ `expr $START % $l_count` -eq 0 ]] ; then
+        local l_obs=$l_count
+        local l_seek=`expr $START / $l_count`
+    else
+        # fallback to one character at a time
+        local l_obs=1
+        local l_seek=$START
+    fi
 
-    # truncate file
-    #truncate -s $START "$IN_path" || error_out "Failed to truncate $IN_path to $START"
+    # the input may return after only PIPE_BUF bytes read, and
+    # dd pads with 0s. What is PIPE_BUF? I think 512 is guaranteed,
+    # so use that short of parsing system headers.
+    if [[ `expr $l_count % 512` -eq 0 ]] ; then
+        local l_ddcount=`expr $l_count / 512`
+        local l_ddibs=512
+    else
+        # fallback to one character at a time
+        local l_ddcount=$l_count
+        local l_ddibs=1
+    fi
 
-    dd if=/dev/stdin "of=$IN_path" bs=1 count=$l_count seek=$START || error_out "Failed to dd stdin to $IN_path bs=1"
+    dd if=/dev/stdin "of=$IN_path" count=$l_ddcount ibs=$l_ddibs obs=$l_obs seek=$l_seek || error_out "Failed to dd stdin to $IN_path"
 
     # drain stdin
     cat > /dev/null
+
+    ## dd doesn't retry partial reads, so drain everything
+    ## into a temp file
+    #local l_tmp=`mktemp`
+    #cat - > $l_tmp
+    ## actually put the data where we want it
+    #dd if=$l_tmp "of=$IN_path" ibs=$l_count count=1 obs=$l_obs seek=$l_seek || error_out "Failed to dd stdin to $IN_path"
+    ## get rid of the temp file
+    #rm $l_tmp
+
+    ### drain stdin
+    ##cat > /dev/null
+
+    # TODO rewrite this potato in C...
 
     exit 0
 }
@@ -175,20 +217,38 @@ bashftp_get() {
         exit 1
     fi
 
+    #-------------------
     # crazy computations
+    #-------------------
+
+    # compute block size
     local l_count=$( expr $END - $START )
     if [[ $l_count -le 0 ]] ; then
         echo "$END <= $START" 1>&2
         exit 1
     fi
+    # the output can be done in one large block since we
+    # don't need to compute seek or skip
+    local l_obs=$l_count
+    # if we're moving an integer amount of blocks, use that
+    # as dd's bs
+    if [[ `expr $START % $l_count` -eq 0 ]] ; then
+        local l_ibs=$l_count
+        local l_skip=`expr $START / $l_count`
+        local l_count=1
+    else
+        # else, fallback to one character at a time
+        local l_ibs=1
+        local l_skip=$START
+    fi
 
-    dd "if=$IN_path" bs=1 count=$l_count skip=$START || error_out "Failed to dd $IN_path to stdout bs=1"
+    dd "if=$IN_path" obs=$l_obs ibs=$l_ibs count=$l_count skip=$l_skip || error_out "Failed to dd $IN_path to stdout"
 
     exit 0
 }
 
 bashftp_version() {
-    echo $VERSION
+    echo $BASHFTP_VERSION
 }
 
 bashftp_help() {
