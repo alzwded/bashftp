@@ -53,6 +53,11 @@ Example ls output:
 Changelog
 =========
 
+3.0 -> 3.1
+----------
+
+- return hash 0 for files for which we get EACCESS or some other error
+
 2.0 -> 3.0
 ----------
 

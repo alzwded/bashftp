@@ -21,7 +21,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-BASHFTP_VERSION=3.0
+BASHFTP_VERSION=3.1
 
 error_out() {
     echo "$@" 1>&2
@@ -30,15 +30,21 @@ error_out() {
 
 if uname -a | grep ^OpenBSD > /dev/null 2>&1 ; then
     bashftp_hash() {
-        printf "%s\n" $( ${1?missing hash command} -q "${2?missing path}" | cut -d= -f2 ) || error_out "Failed to md5 $1"
+        local H="$( ${1?missing hash command} -q "${2?missing path}" || echo 0 )"
+        H="$( echo "$H" | cut -d= -f2  )"
+        echo "$H"
     }
 elif md5sum -b "$0" > /dev/null 2>&1 ; then
     bashftp_hash() {
-        printf "%s\n" $( ${1?missing hash command} -b "${2?missing path}" | cut -d' ' -f1 ) || error_out "Failed to md5 $1"
+        local H="$( ${1?missing hash command} -b "${2?missing path}" || echo 0 )"
+        H="$( echo "$H" | cut -d' ' -f1 )"
+        echo "$H"
     }
 else
     bashftp_hash() {
-        printf "%s\n" $( ${1?missing hash command} -b "${2?missing path}" | cut -d' ' -f1 ) || error_out "Failed to md5 $1"
+        local H="$( ${1?missing hash command} -b "${2?missing path}" || echo 0 )"
+        H="$( echo "$H" | cut -d' ' -f1 )"
+        echo "$H"
     }
 fi
 
