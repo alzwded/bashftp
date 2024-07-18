@@ -205,6 +205,22 @@ start get with bad range
 cat /dev/zero | $bashftp put 5 0 no && fail
 [ -f no ] && fail
 
+start hash on file with EACCESS
+mkdir -p "$WORKDIR/EACCESS/"
+echo 'secret' > "$WORKDIR/EACCESS/denied"
+chmod 0000 "$WORKDIR/EACCESS/denied"
+A=( $( $bashftp ls "$WORKDIR/EACCESS/" md5 | head -n 1 ) )
+# type is F
+[ "${A[0]}" = f ] || fail
+# timestamp is something
+[ "${A[1]}" -gt 0 ] || fail
+# size is 7
+[ "${A[2]}" -eq 7 ] || fail
+# hash should be 0 because the file cannot be read
+[ "${A[3]}" -eq 0 ] || fail
+# the filename is the single file in that directory
+[ "${A[4]}" = "$WORKDIR/EACCESS/denied" ] || fail
+
 if [[ $NFAIL -gt 0 ]] ; then
     echo ''
     echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
