@@ -74,6 +74,15 @@ f 978310860 12 18e724602c9dcb3e4e936f8909a4972c ./d/c
 EOT
 diff -u "$WORKDIR/ls.2.orig" "$WORKDIR/ls.2" || fail
 
+# ls, crc32
+start crc32 hash
+$bashftp ls ./d crc32 | sort -> "$WORKDIR/ls.3" || fail
+cat <<EOT > "$WORKDIR/ls.3.orig"
+d 978310860 ./d/e
+f 978310860 12 4001513809 ./d/c
+EOT
+diff -u "$WORKDIR/ls.3.orig" "$WORKDIR/ls.3" || fail
+
 # get full file < block
 start get full file, file is smaller than block
 $bashftp get 0 10 ./a > "$WORKDIR/get.1" || fail
@@ -92,7 +101,7 @@ diff -u "$WORKDIR/get.0.orig" "$WORKDIR/get.0" || fail
 
 # get a block
 start get second block, block is smaller than file
-bash -x $bashftp get 5 10 ./b > "$WORKDIR/get.2" || fail
+$bashftp get 5 10 ./b > "$WORKDIR/get.2" || fail
 cat <<EOT > "$WORKDIR/get.2.orig"
 qwer
 EOT

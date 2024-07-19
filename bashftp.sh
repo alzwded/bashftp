@@ -21,7 +21,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-BASHFTP_VERSION=3.1
+BASHFTP_VERSION=3.2
 
 error_out() {
     echo "$@" 1>&2
@@ -29,18 +29,33 @@ error_out() {
 }
 
 if uname -a | grep ^OpenBSD > /dev/null 2>&1 ; then
+    bashftp_crc32() {
+        local H="$( cksum "${2?missing path}" || echo 0 )"
+        H="$( echo "$H" | cut -d' ' -f1  )"
+        echo "$H"
+    }
     bashftp_hash() {
         local H="$( ${1?missing hash command} -q "${2?missing path}" || echo 0 )"
         H="$( echo "$H" | cut -d= -f2  )"
         echo "$H"
     }
 elif md5sum -b "$0" > /dev/null 2>&1 ; then
+    bashftp_crc32() {
+        local H="$( cksum "${2?missing path}" || echo 0 )"
+        H="$( echo "$H" | cut -d' ' -f1  )"
+        echo "$H"
+    }
     bashftp_hash() {
         local H="$( ${1?missing hash command} -b "${2?missing path}" || echo 0 )"
         H="$( echo "$H" | cut -d' ' -f1 )"
         echo "$H"
     }
 else
+    bashftp_crc32() {
+        local H="$( cksum "${2?missing path}" || echo 0 )"
+        H="$( echo "$H" | cut -d' ' -f1  )"
+        echo "$H"
+    }
     bashftp_hash() {
         local H="$( ${1?missing hash command} -b "${2?missing path}" || echo 0 )"
         H="$( echo "$H" | cut -d' ' -f1 )"
@@ -85,7 +100,6 @@ bashftp_ls() {
     local l_size
     local l_timestamp
     local l_with_hash=0
-    local l_hash
 
     if [[ ${2+x} == x  ]] ; then
         case "$2" in
@@ -95,6 +109,12 @@ bashftp_ls() {
                     l_hash=( $2 )
                 elif which $2sum > /dev/null 2>&1 ; then
                     l_hash=( $2sum )
+                fi
+                ;;
+            crc32)
+                l_with_hash=1
+                if which cksum > /dev/null 2>&1 ; then
+                    l_hash=( bashftp_crc32 )
                 fi
                 ;;
             *)
