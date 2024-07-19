@@ -215,6 +215,12 @@ cat /dev/zero | $bashftp put 5 0 no && fail
 [ -f no ] && fail
 
 start hash on file with EACCESS
+if [[ "$(id -u)" -eq 0 ]] ; then
+    echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+    echo  skipping start hash on file with EACCESS as this cannot run as root
+    echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+else
+
 mkdir -p "$WORKDIR/EACCESS/"
 echo 'secret' > "$WORKDIR/EACCESS/denied"
 chmod 0000 "$WORKDIR/EACCESS/denied"
@@ -229,6 +235,8 @@ A=( $( $bashftp ls "$WORKDIR/EACCESS/" md5 | head -n 1 ) )
 [ "${A[3]}" -eq 0 ] || fail
 # the filename is the single file in that directory
 [ "${A[4]}" = "$WORKDIR/EACCESS/denied" ] || fail
+
+fi
 
 if [[ $NFAIL -gt 0 ]] ; then
     echo ''
