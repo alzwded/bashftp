@@ -32,7 +32,7 @@ if uname -a | grep ^OpenBSD > /dev/null 2>&1 ; then
     bashftp_crc32() {
         local H="$( cksum "${2?missing path}" || echo 0 )"
         H="$( echo "$H" | cut -d' ' -f1  )"
-        echo "$H"
+        echo "CRC32($2)=$H"
     }
     bashftp_hash() {
         local H="$( ${1?missing hash command} -q "${2?missing path}" || echo 0 )"
