@@ -19,15 +19,15 @@ qwer
 z
 EOT
 # Create some subdirs
-mkdir -p "$TESTDIR/d"
-mkdir -p "$TESTDIR/d/e"
-cat <<EOT > "$TESTDIR/d/c"
+mkdir -p "$TESTDIR/d d"
+mkdir -p "$TESTDIR/d d/e"
+cat <<EOT > "$TESTDIR/d d/c"
 asdf
 qwer
 z
 EOT
 
-for i in a b d/c d/e d ; do
+for i in a b "d d/c" "d d/e" "d d" ; do
     touch -m -d 2001-01-01T01:01:00Z "$TESTDIR/$i" || touch -m -d @978310860 "$TESTDIR/$i"
 done
 
@@ -59,37 +59,37 @@ pushd "$TESTDIR" > /dev/null 2>&1
 start ls TESTDIR, no md5
 $bashftp ls . | sort > "$WORKDIR/ls.1" || fail
 cat <<EOT > "$WORKDIR/ls.1.orig"
-d 978310860 ./d
+d 978310860 ./d d
 f 978310860 12 0 ./b
 f 978310860 5 0 ./a
 EOT
 diff -u "$WORKDIR/ls.1.orig" "$WORKDIR/ls.1" || fail
 
 # ls, md5
-start ls TESTDIR/d, with md5
-$bashftp ls ./d md5 | sort > "$WORKDIR/ls.2" || fail
+start ls TESTDIR/d d, with md5
+$bashftp ls "./d d" md5 | sort > "$WORKDIR/ls.2" || fail
 cat <<EOT > "$WORKDIR/ls.2.orig"
-d 978310860 ./d/e
-f 978310860 12 18e724602c9dcb3e4e936f8909a4972c ./d/c
+d 978310860 ./d d/e
+f 978310860 12 18e724602c9dcb3e4e936f8909a4972c ./d d/c
 EOT
 diff -u "$WORKDIR/ls.2.orig" "$WORKDIR/ls.2" || fail
 
 # ls, crc32
 start crc32 hash
-$bashftp ls ./d crc32 | sort > "$WORKDIR/ls.3" || fail
+$bashftp ls "./d d" crc32 | sort > "$WORKDIR/ls.3" || fail
 cat <<EOT > "$WORKDIR/ls.3.orig"
-d 978310860 ./d/e
-f 978310860 12 4001513809 ./d/c
+d 978310860 ./d d/e
+f 978310860 12 4001513809 ./d d/c
 EOT
 diff -u "$WORKDIR/ls.3.orig" "$WORKDIR/ls.3" || fail
 
 start tree crc32
 $bashftp tree . crc32 | sort > "$WORKDIR/tree.1" || fail
 cat <<EOT > "$WORKDIR/tree.1.orig"
-d 978310860 ./d
-d 978310860 ./d/e
+d 978310860 ./d d
+d 978310860 ./d d/e
 f 978310860 12 4001513809 ./b
-f 978310860 12 4001513809 ./d/c
+f 978310860 12 4001513809 ./d d/c
 f 978310860 5 1658262348 ./a
 EOT
 diff -u "$WORKDIR/tree.1.orig" "$WORKDIR/tree.1" || fail
@@ -97,10 +97,10 @@ diff -u "$WORKDIR/tree.1.orig" "$WORKDIR/tree.1" || fail
 start tree without hash
 $bashftp tree . | sort > "$WORKDIR/tree.1" || fail
 cat <<EOT > "$WORKDIR/tree.1.orig"
-d 978310860 ./d
-d 978310860 ./d/e
+d 978310860 ./d d
+d 978310860 ./d d/e
 f 978310860 12 0 ./b
-f 978310860 12 0 ./d/c
+f 978310860 12 0 ./d d/c
 f 978310860 5 0 ./a
 EOT
 diff -u "$WORKDIR/tree.1.orig" "$WORKDIR/tree.1" || fail

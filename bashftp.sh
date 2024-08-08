@@ -163,7 +163,13 @@ bashftp_tree() {
     local IN_hash="$2"
     local d
 
-    for d in $( IFS="\n" find "$IN_path" -type d ) ; do
+    OLD_IFS="$IFS"
+    IFS='
+'
+    local DIRS=( $( find "$IN_path" -type d ) )
+    IFS="$OLD_IFS"
+
+    for d in "${DIRS[@]}" ; do
         ( bashftp_ls "$d" $IN_hash )
     done
 }
