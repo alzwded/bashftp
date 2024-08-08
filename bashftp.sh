@@ -164,7 +164,7 @@ bashftp_tree() {
     local d
 
     for d in $( IFS="\n" find "$IN_path" -type d ) ; do
-        ( bashftp_ls "$d" "$IN_hash" ';' )
+        ( bashftp_ls "$d" $IN_hash )
     done
 }
 

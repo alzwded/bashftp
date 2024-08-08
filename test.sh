@@ -83,7 +83,7 @@ f 978310860 12 4001513809 ./d/c
 EOT
 diff -u "$WORKDIR/ls.3.orig" "$WORKDIR/ls.3" || fail
 
-start tree
+start tree crc32
 $bashftp tree . crc32 | sort > "$WORKDIR/tree.1" || fail
 cat <<EOT > "$WORKDIR/tree.1.orig"
 d 978310860 ./d
@@ -91,6 +91,17 @@ d 978310860 ./d/e
 f 978310860 12 4001513809 ./b
 f 978310860 12 4001513809 ./d/c
 f 978310860 5 1658262348 ./a
+EOT
+diff -u "$WORKDIR/tree.1.orig" "$WORKDIR/tree.1" || fail
+
+start tree without hash
+$bashftp tree . | sort > "$WORKDIR/tree.1" || fail
+cat <<EOT > "$WORKDIR/tree.1.orig"
+d 978310860 ./d
+d 978310860 ./d/e
+f 978310860 12 0 ./b
+f 978310860 12 0 ./d/c
+f 978310860 5 0 ./a
 EOT
 diff -u "$WORKDIR/tree.1.orig" "$WORKDIR/tree.1" || fail
 
