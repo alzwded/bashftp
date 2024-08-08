@@ -53,6 +53,16 @@ Example ls output:
 Changelog
 =========
 
+3.2 -> 3.3
+----------
+
+- add `tree` subcommand
+
+3.1 -> 3.2
+----------
+
+- add crc32 hash type
+
 3.0 -> 3.1
 ----------
 

@@ -76,12 +76,23 @@ diff -u "$WORKDIR/ls.2.orig" "$WORKDIR/ls.2" || fail
 
 # ls, crc32
 start crc32 hash
-$bashftp ls ./d crc32 | sort -> "$WORKDIR/ls.3" || fail
+$bashftp ls ./d crc32 | sort > "$WORKDIR/ls.3" || fail
 cat <<EOT > "$WORKDIR/ls.3.orig"
 d 978310860 ./d/e
 f 978310860 12 4001513809 ./d/c
 EOT
 diff -u "$WORKDIR/ls.3.orig" "$WORKDIR/ls.3" || fail
+
+start tree
+$bashftp tree . crc32 | sort > "$WORKDIR/tree.1" || fail
+cat <<EOT > "$WORKDIR/tree.1.orig"
+d 978310860 ./d
+d 978310860 ./d/e
+f 978310860 12 4001513809 ./b
+f 978310860 12 4001513809 ./d/c
+f 978310860 5 1658262348 ./a
+EOT
+diff -u "$WORKDIR/tree.1.orig" "$WORKDIR/tree.1" || fail
 
 # get full file < block
 start get full file, file is smaller than block

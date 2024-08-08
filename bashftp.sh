@@ -21,7 +21,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-BASHFTP_VERSION=3.2
+BASHFTP_VERSION=3.3
 
 error_out() {
     echo "$@" 1>&2
@@ -156,6 +156,16 @@ bashftp_ls() {
     done
 
     exit 0
+}
+
+bashftp_tree() {
+    local IN_path="${1?missing path}"
+    local IN_hash="$2"
+    local d
+
+    for d in $( IFS="\n" find "$IN_path" -type d ) ; do
+        ( bashftp_ls "$d" "$IN_hash" ';' )
+    done
 }
 
 bashftp_put() {
@@ -305,6 +315,9 @@ fi
 case ${1?missing argument -- try $0 help} in
     ls)
         bashftp_ls "${2?missing path}" $3
+        ;;
+    tree)
+        bashftp_tree "${2?missing path}" $3
         ;;
     put)
         bashftp_put ${2?missing start offset} ${3?missing end offset} "${4?missing destination}"
