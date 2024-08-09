@@ -363,6 +363,8 @@ void do_ls(const char* path, const char* hash)
         free(fullpath);
     }
 
+    closedir(dp);
+
     exit(0);
 }
 
@@ -416,6 +418,7 @@ void do_tree(const char* path, const char* hash)
         }
 
 nextDe:
+        closedir(dp);
         free(pOld);
         free(nextPath);
     }
