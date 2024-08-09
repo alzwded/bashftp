@@ -27,4 +27,3 @@ typedef struct CKSUMContext {
 void	 CKSUM_Init(CKSUM_CTX *);
 void	 CKSUM_Update(CKSUM_CTX *, const u_int8_t *, size_t);
 void	 CKSUM_Final(CKSUM_CTX *);
-char    *CKSUM_End(CKSUM_CTX *, char *);

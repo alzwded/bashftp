@@ -120,22 +120,3 @@ CKSUM_Final(CKSUM_CTX *ctx)
 	}
 	ctx->crc = ~ctx->crc;
 }
-
-char *
-CKSUM_End(CKSUM_CTX *ctx, char *outstr)
-{
-	CKSUM_Final(ctx);
-
-	if (outstr == NULL) {
-        abort();
-        /*
-		if (asprintf(&outstr, "%u %lld", ctx->crc, ctx->len) == -1)
-			return (NULL);
-            */
-	} else {
-		(void)snprintf(outstr, (size_t)CKSUM_DIGEST_STRING_LENGTH,
-		    "%u %lld", ctx->crc, ctx->len);
-	}
-
-	return (outstr);
-}
