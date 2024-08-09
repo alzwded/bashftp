@@ -51,12 +51,12 @@ fail() {
     fi
 }
 
-bashftp="$( dirname $( realpath "$0" ) )/bashftp.sh"
+bashftp="$( dirname $( realpath "$0" ) )/bascftp"
 
 pushd "$TESTDIR" > /dev/null 2>&1
 
-# ls, no md5
-start ls TESTDIR, no md5
+# ls, no crc32
+start ls TESTDIR, no crc32
 $bashftp ls . | sort > "$WORKDIR/ls.1" || fail
 cat <<EOT > "$WORKDIR/ls.1.orig"
 d 978310860 ./d d
@@ -65,12 +65,12 @@ f 978310860 5 0 ./a
 EOT
 diff -u "$WORKDIR/ls.1.orig" "$WORKDIR/ls.1" || fail
 
-# ls, md5
-start ls TESTDIR/d d, with md5
-$bashftp ls "./d d" md5 | sort > "$WORKDIR/ls.2" || fail
+# ls, crc32
+start ls TESTDIR/d d, with crc32
+$bashftp ls "./d d" crc32 | sort > "$WORKDIR/ls.2" || fail
 cat <<EOT > "$WORKDIR/ls.2.orig"
 d 978310860 ./d d/e
-f 978310860 12 18e724602c9dcb3e4e936f8909a4972c ./d d/c
+f 978310860 12 4001513809 ./d d/c
 EOT
 diff -u "$WORKDIR/ls.2.orig" "$WORKDIR/ls.2" || fail
 
@@ -247,17 +247,13 @@ else
 mkdir -p "$WORKDIR/EACCESS/"
 echo 'secret' > "$WORKDIR/EACCESS/denied"
 chmod 0000 "$WORKDIR/EACCESS/denied"
-A=( $( $bashftp ls "$WORKDIR/EACCESS/" md5 | head -n 1 ) )
-# type is F
-[ "${A[0]}" = f ] || fail
-# timestamp is something
-[ "${A[1]}" -gt 0 ] || fail
-# size is 7
-[ "${A[2]}" -eq 7 ] || fail
-# hash should be 0 because the file cannot be read
-[ "${A[3]}" -eq 0 ] || fail
-# the filename is the single file in that directory
-[ "${A[4]}" = "$WORKDIR/EACCESS/denied" ] || fail
+echo 'not a secret' > "$WORKDIR/EACCESS/public"
+touch -m -d 2001-01-01T01:01:00Z "$WORKDIR/EACCESS/public" || touch -m -d @978310860 "$WORKDIR/EACCESS/public"
+$bashftp ls "$WORKDIR/EACCESS/" crc32 > "$WORKDIR/eaccess.1"
+cat <<EOT > "$WORKDIR/eaccess.1.orig"
+f 978310860 13 3936211975 $WORKDIR/EACCESS/public
+EOT
+diff -u "$WORKDIR/eaccess.1.orig" "$WORKDIR/eaccess.1" || fail
 
 fi
 
