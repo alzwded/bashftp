@@ -1,4 +1,4 @@
-CFLAGS ?= -g -DHAVE_SENDFILE
+CFLAGS ?= -O2
 PREFIX ?= /usr/local
 bascftp: bascftp.o crc.o
 	gcc -o $@ $(CFLAGS) $(LDFLAGS) $^
