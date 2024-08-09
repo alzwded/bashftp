@@ -294,11 +294,12 @@ bashftp_version() {
 }
 
 bashftp_help() {
-    echo "Usage: $1 [help|ls|put|get|version]"
+    echo "Usage: $1 [help|ls|tree|put|get|version]"
     echo "    help                  prints this message"
     echo "    version               prints version"
     echo "    ls path               list directory"
     echo "    ls path md5           list directory and calculate md5 for files"
+    echo "    tree path [md5]       same as ls, but recursive"
     echo "    put start end path    receives a chunk of a file on stdin"
     echo "    get start end path    returns a chunk of a file on stdout"
     echo ""
