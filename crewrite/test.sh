@@ -246,12 +246,14 @@ else
 
 mkdir -p "$WORKDIR/EACCESS/"
 echo 'secret' > "$WORKDIR/EACCESS/denied"
-chmod 0000 "$WORKDIR/EACCESS/denied"
 echo 'not a secret' > "$WORKDIR/EACCESS/public"
 touch -m -d 2001-01-01T01:01:00Z "$WORKDIR/EACCESS/public" || touch -m -d @978310860 "$WORKDIR/EACCESS/public"
+touch -m -d 2001-01-01T01:01:00Z "$WORKDIR/EACCESS/denied" || touch -m -d @978310860 "$WORKDIR/EACCESS/denied"
+chmod 0000 "$WORKDIR/EACCESS/denied"
 $bashftp ls "$WORKDIR/EACCESS/" crc32 > "$WORKDIR/eaccess.1"
 cat <<EOT > "$WORKDIR/eaccess.1.orig"
 f 978310860 13 3936211975 $WORKDIR/EACCESS/public
+f 978310860 7 0 $WORKDIR/EACCESS/denied
 EOT
 diff -u "$WORKDIR/eaccess.1.orig" "$WORKDIR/eaccess.1" || fail
 

@@ -46,6 +46,8 @@ struct DirNode {
     struct DirNode* next;
 };
 
+/** help: print help and exit
+ */
 void help(const char* argv0)
 {
     printf( "bascftp %s\n"
@@ -122,6 +124,8 @@ int rmkdir(const char* path)
     return 0;
 }
 
+/** do_put: put command implementation
+ */
 void do_put(const char* path, long start, long end)
 {
     FILE* f = NULL;
@@ -199,6 +203,8 @@ void do_put(const char* path, long start, long end)
     exit(0);
 }
 
+/** do_get: get command implementation
+ */
 void do_get(const char* path, long start, long end)
 {
     FILE* f = NULL;
@@ -255,7 +261,12 @@ void do_get(const char* path, long start, long end)
     exit(0);
 }
 
-// callback for crc32
+/** crc32_hash: crc32 hash callback
+ *
+ * f will end up fully wound
+ *
+ * return value needs to be free()d
+ */
 char* crc32_hash(FILE* f)
 {
     u_int8_t block[8096];
@@ -279,6 +290,12 @@ char* crc32_hash(FILE* f)
     return strdup(s);
 }
 
+/** STAT_RESULT
+ *
+ * Linux says dirent.d_type is not supported by all filesystem types,
+ * so since we're stat()ing things anyway, we might as well report if
+ * it's a directory or a file
+ */
 typedef enum {
     FAILED = -1,
     OK = 0,
@@ -287,55 +304,49 @@ typedef enum {
 
 STAT_RESULT stat_impl(const char* path, hash_f_t hash_fn)
 {
-    FILE* f = fopen(path, "r");
-    if(!f) {
-        fprintf(stderr, "Failed to open %s for reading\n", path);
-        return FAILED;
-    }
-    int fd = fileno(f);
     struct stat sb;
 
-    if(-1 ==  fstat(fd, &sb)) {
+    if(-1 ==  stat(path, &sb)) {
         warn("fstat %s failed", path);
-        fclose(f);
         return FAILED;
     }
 
     time_t ftime = sb.st_mtime;
 
-	if(S_ISDIR(sb.st_mode)) {
+    if(S_ISDIR(sb.st_mode)) {
         printf("d %lu %s\n",
                 (unsigned long)ftime,
                 path);
-        fclose(f);
         return ISDIR;
-	} else if(!S_ISREG(sb.st_mode)) {
+    } else if(!S_ISREG(sb.st_mode)) {
         // just... don't worry about pipes or devices, that's not
         // why we're here
         fprintf(stderr, "%s is not a file nor dir\n",
                 path);
-        fclose(f);
         return FAILED;
     }
 
     off_t fsize = sb.st_size;
-	char* hash = NULL;
+    char* hash = NULL;
 
     // if we're asked to hash, hash
     if(hash_fn) {
-		hash = hash_fn(f);
+        FILE* f = fopen(path, "r");
+        if(f) {
+            hash = hash_fn(f);
+            fclose(f);
+        }
         if(!hash) {
             fprintf(stderr, "Failed to hash %s\n",
                     path);
         }
     }
 
-	printf("f %lu %lu %s %s\n",
+    printf("f %lu %lu %s %s\n",
             (unsigned long)ftime,
             (unsigned long)fsize,
             hash ? hash : "0",
             path);
-    fclose(f);
     if(hash) free(hash);
 
     return OK;
