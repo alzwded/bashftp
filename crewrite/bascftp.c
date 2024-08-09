@@ -297,6 +297,7 @@ STAT_RESULT stat_impl(const char* path, hash_f_t hash_fn)
 
     if(-1 ==  fstat(fd, &sb)) {
         warn("fstat %s failed", path);
+        fclose(f);
         return FAILED;
     }
 
@@ -306,12 +307,14 @@ STAT_RESULT stat_impl(const char* path, hash_f_t hash_fn)
         printf("d %lu %s\n",
                 (unsigned long)ftime,
                 path);
+        fclose(f);
         return ISDIR;
 	} else if(!S_ISREG(sb.st_mode)) {
         // just... don't worry about pipes or devices, that's not
         // why we're here
         fprintf(stderr, "%s is not a file nor dir\n",
                 path);
+        fclose(f);
         return FAILED;
     }
 
