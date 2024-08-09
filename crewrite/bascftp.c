@@ -420,8 +420,8 @@ void do_tree(const char* path, const char* hash)
             }
         }
 
-nextDe:
         closedir(dp);
+nextDe:
         free(pOld);
         free(nextPath);
     }
