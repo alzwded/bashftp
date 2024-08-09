@@ -35,7 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "crc.h"
 
-#define VERSION "3.3c"
+#define VERSION "3.3.1c"
 
 // signature for file hasher
 typedef char* (*hash_f_t)(FILE*);
@@ -231,6 +231,7 @@ void do_get(const char* path, long start, long end)
 
     count = end - start;
 
+    // jump to where we start reading from
     fseek(f, start, SEEK_SET);
 
     // stream loop
@@ -306,17 +307,21 @@ STAT_RESULT stat_impl(const char* path, hash_f_t hash_fn)
 {
     struct stat sb;
 
+    // stat it
     if(-1 ==  stat(path, &sb)) {
         warn("fstat %s failed", path);
         return FAILED;
     }
 
+    // grab time
     time_t ftime = sb.st_mtime;
 
     if(S_ISDIR(sb.st_mode)) {
+        // handle directories
         printf("d %lu %s\n",
                 (unsigned long)ftime,
                 path);
+        // tell caller it was a directory, in case it wants to recurse
         return ISDIR;
     } else if(!S_ISREG(sb.st_mode)) {
         // just... don't worry about pipes or devices, that's not
@@ -326,10 +331,11 @@ STAT_RESULT stat_impl(const char* path, hash_f_t hash_fn)
         return FAILED;
     }
 
+    // grab size
     off_t fsize = sb.st_size;
-    char* hash = NULL;
 
     // if we're asked to hash, hash
+    char* hash = NULL;
     if(hash_fn) {
         FILE* f = fopen(path, "r");
         if(f) {
@@ -342,6 +348,7 @@ STAT_RESULT stat_impl(const char* path, hash_f_t hash_fn)
         }
     }
 
+    // report file
     printf("f %lu %lu %s %s\n",
             (unsigned long)ftime,
             (unsigned long)fsize,
@@ -352,8 +359,13 @@ STAT_RESULT stat_impl(const char* path, hash_f_t hash_fn)
     return OK;
 }
 
+/** do_ls: ls command implementation
+ *
+ * hash is a string of one of the supported hash algorithms
+ */
 void do_ls(const char* path, const char* hash)
 {
+    // only crc32 for now, it's the only one I actually use at scale
     hash_f_t hash_fn = (strcmp(hash, "crc32") == 0) ? crc32_hash : NULL;
 
     DIR* dp = opendir(path);
@@ -382,13 +394,20 @@ void do_ls(const char* path, const char* hash)
     exit(0);
 }
 
+/** do_tree: tree command implementation
+ */
 void do_tree(const char* path, const char* hash)
 {
     hash_f_t hash_fn = (strcmp(hash, "crc32") == 0) ? crc32_hash : NULL;
+    // keep track of directories we have yet to recurse in;
+    // readdir has some internal machinery that I don't want to think about,
+    // so only do one readdir() loop at a time;
     struct DirNode head = {
         .path = NULL,
         .next = NULL,
     };
+    // the head does not contain anything, it just points to the first
+    // element (if any)
     head.next = malloc(sizeof(struct DirNode));
     head.next->path = strdup(path);
     head.next->next = NULL;
@@ -397,7 +416,9 @@ void do_tree(const char* path, const char* hash)
     struct dirent* de;
 
     while(head.next) {
+        // next path to dive into
         char* nextPath = head.next->path;
+        // pop element from job stack
         struct DirNode* pOld = head.next;
         head.next = pOld->next;
 
@@ -421,9 +442,10 @@ void do_tree(const char* path, const char* hash)
             // so stat_impl tells us if it's a directory or not
             STAT_RESULT iswhat = stat_impl(fullpath, hash_fn);
             if(iswhat == ISDIR) {
-                // store the directory in the stack for later traversal
+                // push the directory in the stack for later traversal
                 struct DirNode* p = head.next;
                 head.next = malloc(sizeof(struct DirNode));
+                // we'll free fullpath later
                 head.next->path = fullpath;
                 head.next->next = p;
             } else {
@@ -433,8 +455,8 @@ void do_tree(const char* path, const char* hash)
 
         closedir(dp);
 nextDe:
-        free(pOld);
-        free(nextPath);
+        free(pOld); // free popped element
+        free(nextPath); // this is the fullpath we've free()d later
     }
     
     exit(0);
