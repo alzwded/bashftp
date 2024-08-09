@@ -122,7 +122,7 @@ int rmkdir(const char* path)
     return 0;
 }
 
-void do_put(const char* path, ssize_t start, ssize_t end)
+void do_put(const char* path, long start, long end)
 {
     FILE* f = NULL;
 
@@ -199,7 +199,7 @@ void do_put(const char* path, ssize_t start, ssize_t end)
     exit(0);
 }
 
-void do_get(const char* path, off_t start, off_t end)
+void do_get(const char* path, long start, long end)
 {
     FILE* f = NULL;
 

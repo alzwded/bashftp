@@ -1,7 +1,7 @@
-CFLAGS ?= -O2
+CFLAGS ?= -O2 -Wall
 PREFIX ?= /usr/local
 bascftp: bascftp.o crc.o
-	gcc -o $@ $(CFLAGS) $(LDFLAGS) $^
+	$(CC) -o $@ $(CFLAGS) $(LDFLAGS) $^
 
 check: check_environment tests
 
