@@ -1,7 +1,8 @@
 CFLAGS ?= -O2 -Wall
 PREFIX ?= /usr/local
-bascftp: bascftp.o crc.o
-	$(CC) -o $@ $(CFLAGS) $(LDFLAGS) $^
+OBJS = bascftp.o crc.o
+bascftp: $(OBJS)
+	$(CC) -o $@ $(CFLAGS) $(LDFLAGS) $(OBJS)
 
 check: check_environment tests
 
