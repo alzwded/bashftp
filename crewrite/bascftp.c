@@ -424,7 +424,7 @@ void do_tree(const char* path, const char* hash)
 
         dp = opendir(nextPath);
         if(!dp) {
-            warn("opendir %s", path);
+            warn("opendir %s", nextPath);
             goto nextDe;
         }
         size_t npath = strlen(nextPath);
