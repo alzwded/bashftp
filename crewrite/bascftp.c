@@ -313,7 +313,6 @@ char* quick_hash(FILE* f, off_t sz)
 
     /* check for small files */
     if(sz < (off_t)2 * 1024 * 1024) {
-        fprintf(stderr, "SMALL FILE %zd\n", sz);
         return crc32_hash(f, sz);
     }
 
