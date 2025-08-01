@@ -35,10 +35,18 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "crc.h"
 
-#define VERSION "3.3.1c"
+#define VERSION "3.3.2"
+
+#define INIT_HASH(declared, argument) \
+    hash_f_t declared = NULL; \
+    if(strcmp(argument, "crc32") == 0) { \
+        declared = crc32_hash; \
+    } else if(strcmp(argument, "quick") == 0) { \
+        declared = quick_hash; \
+    }
 
 // signature for file hasher
-typedef char* (*hash_f_t)(FILE*);
+typedef char* (*hash_f_t)(FILE*, off_t);
 
 // directory job stack
 struct DirNode {
@@ -55,10 +63,12 @@ void help(const char* argv0)
             "    help                  prints this message\n"
             "    version               prints version\n"
             "    ls path               list directory\n"
-            "    ls path md5           list directory and calculate md5 for files\n"
-            "    tree path [md5]       same as ls, but recursive\n"
+            "    ls path hash          list directory and calculate <hash> for files\n"
+            "    tree path [hash]      same as ls, but recursive\n"
             "    put start end path    receives a chunk of a file on stdin\n"
             "    get start end path    returns a chunk of a file on stdout\n"
+            "\n"
+            "<hash> can be: crc32 quick\n"
             "\n"
             "ls format:\n"
             "- directories:\n"
@@ -268,9 +278,9 @@ void do_get(const char* path, long start, long end)
  *
  * return value needs to be free()d
  */
-char* crc32_hash(FILE* f)
+char* crc32_hash(FILE* f, off_t)
 {
-    u_int8_t block[8096];
+    u_int8_t block[8192];
     fseek(f, 0, SEEK_SET);
 
     struct CKSUMContext cksum;
@@ -286,7 +296,56 @@ char* crc32_hash(FILE* f)
     CKSUM_Final(&cksum);
 
     char* s = (char*)block;
-    snprintf(s, 8096, "%u", cksum.crc);
+    snprintf(s, 8192, "%u", cksum.crc);
+
+    return strdup(s);
+}
+
+/** quick_hash: crc32 on only 0-3MiB of the file
+ *
+ * f will end up fully wound
+ *
+ * return value needs to be free()d
+ */
+char* quick_hash(FILE* f, off_t sz)
+{
+    u_int8_t block[8192];
+
+    /* check for small files */
+    if(sz < (off_t)2 * 1024 * 1024) {
+        fprintf(stderr, "SMALL FILE %zd\n", sz);
+        return crc32_hash(f, sz);
+    }
+
+    /* start hashing parts of the file */
+    struct CKSUMContext cksum;
+    CKSUM_Init(&cksum);
+
+    /* grab first meg */
+    rewind(f);
+    for(int i = 0; i < 128; ++i) {
+        size_t read = fread(block, 1, sizeof(block), f);
+        if(read == 0 && ferror(f))
+            return NULL;
+        if(read == 0) break;
+        CKSUM_Update(&cksum, block, read);
+    }
+
+    /* grab last meg */
+    fseek(f, 1024 * 1024, SEEK_END);
+    for(int i = 0; i < 128; ++i) {
+        size_t read = fread(block, 1, sizeof(block), f);
+        if(read == 0 && ferror(f))
+            return NULL;
+        if(read == 0) break;
+        CKSUM_Update(&cksum, block, read);
+    }
+
+    /* done */
+    CKSUM_Final(&cksum);
+
+    char* s = (char*)block;
+    snprintf(s, 8192, "%u", cksum.crc);
 
     return strdup(s);
 }
@@ -339,7 +398,7 @@ STAT_RESULT stat_impl(const char* path, hash_f_t hash_fn)
     if(hash_fn) {
         FILE* f = fopen(path, "r");
         if(f) {
-            hash = hash_fn(f);
+            hash = hash_fn(f, fsize);
             fclose(f);
         }
         if(!hash) {
@@ -365,8 +424,7 @@ STAT_RESULT stat_impl(const char* path, hash_f_t hash_fn)
  */
 void do_ls(const char* path, const char* hash)
 {
-    // only crc32 for now, it's the only one I actually use at scale
-    hash_f_t hash_fn = (strcmp(hash, "crc32") == 0) ? crc32_hash : NULL;
+    INIT_HASH(hash_fn, hash);
 
     DIR* dp = opendir(path);
     if(!dp) {
@@ -398,7 +456,8 @@ void do_ls(const char* path, const char* hash)
  */
 void do_tree(const char* path, const char* hash)
 {
-    hash_f_t hash_fn = (strcmp(hash, "crc32") == 0) ? crc32_hash : NULL;
+    // only crc32 for now, it's the only one I actually use at scale
+    INIT_HASH(hash_fn, hash);
     // keep track of directories we have yet to recurse in;
     // readdir has some internal machinery that I don't want to think about,
     // so only do one readdir() loop at a time;
@@ -462,6 +521,13 @@ nextDe:
     exit(0);
 }
 
+int unsupported_hash(const char* hash)
+{
+    return strcmp(hash, "crc32")
+        && strcmp(hash, "quick")
+        ;
+}
+
 int main(int argc, char* argv[])
 {
     if(argc <= 1
@@ -481,7 +547,7 @@ int main(int argc, char* argv[])
     }
 
     if(strcmp(argv[1], "ls") == 0 || strcmp(argv[1], "tree") == 0) {
-        if(argc > 3 && strcmp(argv[3], "crc32")) {
+        if(argc > 3 && unsupported_hash(argv[3])) {
             fprintf(stderr, "Unsupported hash %s\n", argv[3]);
             exit(2);
         }

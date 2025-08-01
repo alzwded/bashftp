@@ -3,9 +3,10 @@
 declare -a FAILS
 NFAIL=0
 TESTDIR=`mktemp -d`
+BIGDIR=`mktemp -d`
 WORKDIR=`mktemp -d`
 rmtestdir() {
-    rm -rf "$TESTDIR" "$WORKDIR"
+    rm -rf "$TESTDIR" "$WORKDIR" "$BIGDIR"
 }
 trap rmtestdir EXIT
 
@@ -27,9 +28,28 @@ qwer
 z
 EOT
 
+cat <<EOT > "$BIGDIR/f1"
+1234567890asdbfrhruhhgtgiurgiuht8fnrbvbbewwsewsoo01234567890123
+EOT
+cp "$BIGDIR/f1" "$BIGDIR/f2"
+for(( i=0 ; $i < 14 ; i++ )) ; do
+    cat "$BIGDIR/f2" "$BIGDIR/f2" > "$BIGDIR/f2.a"
+    mv "$BIGDIR/f2.a" "$BIGDIR/f2"
+done
+cp "$BIGDIR/f2" "$BIGDIR/f3"
+for(( i=0 ; $i < 2 ; i++ )) ; do
+    cat "$TESTDIR/b" "$BIGDIR/f3" "$BIGDIR/f3" "$TESTDIR/b" "$TESTDIR/b" > "$BIGDIR/f3.a"
+    mv "$BIGDIR/f3.a" "$BIGDIR/f3"
+done
+
 for i in a b "d d/c" "d d/e" "d d" ; do
     touch -m -d 2001-01-01T01:01:00Z "$TESTDIR/$i" || touch -m -d @978310860 "$TESTDIR/$i"
 done
+for i in f1 f2 f3 ; do
+    touch -m -d 2001-01-01T01:01:00Z "$BIGDIR/$i" || touch -m -d @978310860 "$BIGDIR/$i"
+done
+
+
 
 CURRENT=none
 start() {
@@ -218,6 +238,37 @@ start put file in nonexistant1 directory
 cat /dev/null | $bashftp put 0 0 nonexistant1/emptyfile || fail
 printf "" > "$WORKDIR/empty"
 diff -u "$WORKDIR/empty" nonexistant1/emptyfile || fail
+
+# =================================================================
+
+# quick hash tests in BIGDIR
+#
+
+pushd "$BIGDIR" > /dev/null 2>&1
+
+start ls BIGDIR, quick hash
+$bashftp ls . quick | sort > "$WORKDIR/ls.quick" || fail
+cat <<EOT > "$WORKDIR/ls.quick.orig"
+f 978310860 1048576 4042135053 ./f2
+f 978310860 4194412 220275367 ./f3
+f 978310860 64 1926856043 ./f1
+EOT
+diff -u "$WORKDIR/ls.quick.orig" "$WORKDIR/ls.quick" || fail
+
+start tree BIGDIR, quick hash
+$bashftp tree . quick | sort > "$WORKDIR/tree.quick" || fail
+cat <<EOT > "$WORKDIR/tree.quick.orig"
+f 978310860 1048576 4042135053 ./f2
+f 978310860 4194412 220275367 ./f3
+f 978310860 64 1926856043 ./f1
+EOT
+diff -u "$WORKDIR/tree.quick.orig" "$WORKDIR/tree.quick" || fail
+
+#
+# end BIGDIR tests
+popd > /dev/null 2>&1
+
+# =================================================================
 
 # error cases
 #
