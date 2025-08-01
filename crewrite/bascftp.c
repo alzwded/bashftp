@@ -35,7 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "crc.h"
 
-#define VERSION "3.3.2"
+#define VERSION "3.3.3c"
 
 #define INIT_HASH(declared, argument) \
     hash_f_t declared = NULL; \
